@@ -1,164 +1,12 @@
 ---
-title: "US Opioid Crisis"
+title: "test2"
 author: "Áine Robinson"
-date: "2024-03-11"
-output:
-  html_document: default
-  pdf_document: default
+date: "2024-04-17"
+output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-# Background on the Opioid Crisis in America
-
-The United States opioid epidemic is a nationwide public health crisis. Initially driven by increased consumption and availability of pharmaceutical opioids such as oxycontin, an increasing number of opioid overdoses are now related to heroin and illicitly manufactured fentanyl and fentanyl analogs. Deaths related to opioid use have sharply increased from 1996 when advertisement around opioid based pharmaceuticals became unrestricted. 
-
-# Research Questions 
-
-I wanted to look at the steady increase in opioid-related deaths in the US, to visualize this I used a simple line graph plotting the data from 1990 to 2019. 
-I also compared opioid related deaths to other drug related deaths in the US along the same time scale, initially just alcohol but then also cocaine and amphetamine.
-As my final research question I wanted to plot the data spatially by looking at how opioid related deaths have differed across different US states. However, I wanted to keep the temporal aspect of the data, so therefore I made a data file for every year with every states opioid-related death rate
-
-
-# Data Sources 
-All the data was sourced from the Institute for Health Metrics and Evaluation
-
-# Alcohol vs. Opioid- related Deaths
-## Data preparation
-My first idea was to compare opioid deaths and alcohol deaths as alcohol is the most common and popular drug of choice, so popular and mainstream in fact that most people do not consider it a 'drug'. I 
-```{r Alcohol and Opioid, message=FALSE, warning=FALSE}
-#Creating line graph for rate of opioid  and alcohol related deaths over time 1990-2019 in the USA
-
-#load relevant packages
-
-library(dplyr)
-library(here)
-library(tidyverse)
-library(readr)
-library(ggplot2)
-
-#load data
-usdeathcompared <- read.csv(here('alcoholvsopioid.csv'))
-
-#deleting unnecessary columns
-columns_to_delete <- c("measure_id", "measure_name","cause_id", "metric_id","metric_name","age_id","sex_id","sex_name","age_name","upper","lower", "location_name")
-usdeathcompared <- usdeathcompared[, !(names(usdeathcompared) %in% columns_to_delete)]
-
-#renaming columns
-##val change to rate_deaths 
-colnames(usdeathcompared)[colnames(usdeathcompared)=="val"] <-"rate_death"
-view(usdeathcompared)
-
-#make line graph 
-##make wide data
-usdeath<- usdeathcompared %>%
-  pivot_wider(names_from = cause_name, values_from = rate_death)
-
-##change column names
-colnames(usdeath)[colnames(usdeath)=="Alcohol use disorders"] <-"Alcohol"
-colnames(usdeath)[colnames(usdeath)=="Opioid use disorders"] <-"Opioid"
-
-##plot data
-alcoholvsopioid <- ggplot(usdeath, aes(x = year)) +
-  geom_line(aes(y = Alcohol, color = factor("Alcohol")), linetype = "solid", size = 1.65) +
-  geom_line(aes(y = Opioid, color = factor("Opioid")), linetype = "solid", size = 1.65) +
-  scale_color_manual(name = "Cause", values = c("Alcohol" = "dodgerblue", "Opioid" = "firebrick")) +
-  labs(title = "Alcohol- and Opioid Use-Related Death Rates", 
-       subtitle =  "US Data from 1990-2019",
-       caption = "Source: Institute for Health Metrics and Evaluation",
-       x = "Year",
-       y = "Death Rate per 100,000",
-       color = "Cause") +
-  scale_y_continuous(limits = c(0, max(usdeath$Alcohol, usdeath$Opioid) + 1)) +
-  theme_minimal() +
-  theme(plot.title = element_text(color = "#0099f9", size = 20, face = "bold", hjust = 0.5),
-  plot.subtitle = element_text(size = 13, face = "bold", hjust = 0.5),
-  plot.caption = element_text(face = "italic", hjust = 0)) +
-  theme(axis.title.x = element_text(color = "#0099f9", size = 16, face = "bold"),
-        axis.title.y = element_text(color = "#0099f9", size = 16, face = "italic"))
-
-print(alcoholvsopioid)
-```
-
-## Interactive Plot
-
-Next I decided I wanted to make an interactive plot for the main 4 drug related deaths in the US
-
-```{r 4 Drug Plot, message=FALSE, warning=FALSE}
-library(here)
-library(tidyverse)
-library(readr)
-library(gganimate)
-library(plotly)
-
-usdrugdeaths <- read.csv(here('alldrugsus.csv'))
-
-
-#deleting unnessecary columns
-
-columns_to_delete <- c("measure_id", "measure_name","cause_id", "metric_id","metric_name","age_id","sex_id","sex_name","age_name","upper","lower", "location_name")
-usdrugdeaths <- usdrugdeaths[, !(names(usdrugdeaths) %in% columns_to_delete)]
-
-#renaming columns
-
-##val change to rate_deaths 
-colnames(usdrugdeaths)[colnames(usdrugdeaths)=="val"] <-"rate_death"
-
-#make wide data
-usdrugdeaths<- usdrugdeaths %>%
-  pivot_wider(names_from = cause_name, values_from = rate_death)
-
-#change column names
-colnames(usdrugdeaths)[colnames(usdrugdeaths)=="Alcohol use disorders"] <-"Alcohol"
-colnames(usdrugdeaths)[colnames(usdrugdeaths)=="Opioid use disorders"] <-"Opioid"
-colnames(usdrugdeaths)[colnames(usdrugdeaths)=="Cocaine use disorders"] <-"Cocaine"
-colnames(usdrugdeaths)[colnames(usdrugdeaths)=="Amphetamine use disorders"] <-"Amphetamine"
-
-#make line graph with all 4 drugs
-drugdeaths <- ggplot(usdrugdeaths, aes(x = year)) +
-  geom_line(aes(y = Alcohol, color = factor("Alcohol")), linetype = "solid", size = 1.65) +
-  geom_line(aes(y = Opioid, color = factor("Opioid")), linetype = "solid", size = 1.65) +
-  geom_line(aes(y = Cocaine, color = factor("Cocaine")), linetype = "solid", size = 1.65) +
-  geom_line(aes(y = Amphetamine, color = factor("Amphetamine")), linetype = "solid", size = 1.65) +
-  scale_color_manual(name = "Cause", values = c("Alcohol" = "dodgerblue", "Opioid" = "firebrick", "Cocaine"= "darkgreen", "Amphetamine"="purple")) +
-  labs(title = "Drug-related Deaths in the US", 
-       subtitle =  "Data from 1990-2019",
-       caption = "Source: Institute for Health Metrics and Evaluation",
-       x = "Year",
-       y = "Death Rate per 100,000",
-       color = "Cause") +
-  scale_y_continuous(limits = c(0, max(usdrugdeaths$Alcohol, usdrugdeaths$Opioid, usdrugdeaths$Cocaine, usdrugdeaths$Amphetamine) + 1)) +
-  theme_minimal() +
-  theme(plot.title = element_text(color = "#0099f9", size = 20, face = "bold", hjust = 0.5),
-        plot.subtitle = element_text(size = 13, face = "bold", hjust = 0.5),
-        plot.caption = element_text(face = "italic", hjust = 0)) +
-  theme(axis.title.x = element_text(color = "#0099f9", size = 16, face = "bold"),
-        axis.title.y = element_text(color = "#0099f9", size = 16, face = "italic"))
-
-#print none interactive plot
-print(drugdeaths)
-
-# Convert ggplot to plotly
-interactive_plot <- ggplotly(drugdeaths)
-
-#save interactive plot
-library(htmlwidgets)
-
-# Save the interactive plot as an HTML file
-saveWidget(interactive_plot, "interactive_plot.html")
-
-# View the interactive plot (can be exported as HTML)
-htmltools::includeHTML("interactive_plot.html")
-
-```
-
-# Making Maps
-
-For my final plot I wanted to make an animated plot of the changes in opioid death by US state across 20 years. Initally I created a gif that circles through the 30 years of data. Then I decided to make a more interactive plot whereby individuals could look at specific years in more detail
-```{r Making Maps, message=FALSE, warning=FALSE}
-#load up relevant packages
+```{r message=FALSE, warning=FALSE}
 library(here)
 library(tidyverse)
 library(readr)
@@ -360,7 +208,7 @@ p1990 <- ggplot(data = map1990,
 
 p1990 + geom_polygon(color = "gray90", size = 0.1) +
   coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
-  scale_fill_gradient(low = "white", high = "darkred", na.value = "white", name = "Death Rate")
+  scale_fill_gradient(low = "white", high = "darkred", na.value = "white", name = "Death Rate per 100,000")
 
 #make a loop for all death maps 1990-2019
 #keep death rate scale constant through all years to show true change in death rate
@@ -376,8 +224,8 @@ generate_and_save_map <- function(current_year) {
                   group = group, fill = death_rate)) +
     geom_polygon(color = "black", size = 0.1) +
     coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
-    scale_fill_gradient(low = "white", high = "red", na.value = "yellow", 
-                        name = "Death Rate", limits = overall_scale_limits) +
+    scale_fill_gradient(low = "white", high = "darkred", na.value = "yellow", 
+                        name = "Death Rate per 100,000", limits = overall_scale_limits) +
     ggtitle(paste("US Opioid-Use Related Death Rate - Year", current_year)) +
     labs(subtitle = "Institute for Health Metrics and Evaluation") +
     theme(plot.title = element_text(size = 18, face = "bold"),
@@ -393,13 +241,6 @@ generate_and_save_map <- function(current_year) {
 # Generate and save frames for each year
 lapply(1990:2019, generate_and_save_map)
 
-```
-
-
-# Making a gif 
-
-```{r Map gif, message=FALSE, warning=FALSE}
-##make a gif of opioid deaths 1990-2019
 
 # Install and load the magick package
 library(magick)
@@ -410,21 +251,19 @@ file_names <- list.files(pattern = "\\.png$", full.names = TRUE)
 # Read the PNG files into R as magick images
 images <- image_read(file_names)
 
-# Create the animation with a frame rate of 24 frames per second
-animation <- image_animate(images, fps = 5)
+
+animation <- image_animate(images, fps = 2)
 
 # Specify the output format as GIF when writing the animation
 animation_file <- "output.gif"
 image_write(animation, animation_file, format = "gif")
 
 ```
+![](output.gif)
 
-#Interactive Map
+```{r}
+#making maps that change by year and you can look at inidividual death rate for each state
 
-```{r Interactive Map, message=FALSE, warning=FALSE}
-
-#make an interactive plot where you can adjust the year 
-#load up relevant packages
 library(shiny)
 library(shinyWidgets)
 
@@ -464,6 +303,51 @@ server <- function(input, output) {
 
 shinyApp(map_changing, server)
 
+#Combine shiny and plotly to make an interactive map where you can hover over the states to see a value and also go through year by year
+
+
+
+library(plotly)
+
+map_changing <- fluidPage(
+  titlePanel("US Opioid-Use Related Death Rate"),
+  
+  # Create a slider input for selecting the year
+  sliderTextInput("year", "Select Year:",
+                  choices = as.character(1990:2019), selected = "1990"),
+  
+  # Display the plot
+  plotlyOutput("map")
+)
+
+server <- function(input, output) {
+  # Generate the plot based on the selected year
+  output$map <- renderPlotly({
+    current_data <- df %>% filter(year == input$year)
+    map_data <- left_join(current_data, us_states, by = "state")
+    
+    p <- ggplot(data = map_data,
+                aes(x = long, y = lat,
+                    group = group, fill = death_rate, text = paste("State: ", state, "<br>Death Rate: ", death_rate))) +
+      geom_polygon(color = "black", size = 0.1) +
+      coord_map() +
+      scale_fill_gradient(low = "white", high = "darkred", na.value = "yellow", 
+                          name = "Death Rate", limits = overall_scale_limits) +
+      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year)) +
+      labs(subtitle = "Institute for Health Metrics and Evaluation") +
+      theme(plot.title = element_text(size = 18, face = "bold"),
+            plot.subtitle = element_text(size = 14),
+            panel.grid.major = element_blank(),  
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "transparent"))
+    
+    ggplotly(p) %>% layout(geo = list(projection = list(type = 'albers usa'))) 
+  })
+}
+
+
+
+shinyApp(map_changing, server)
 ```
 
 
