@@ -1,9 +1,32 @@
 ---
-title: "test2"
+title: "Opioid-related Deaths 1990-2019"
 author: "Áine Robinson"
-date: "2024-04-17"
-output: html_document
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    highlight: tango
+    pdf_document: default
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+runtime: shiny
 ---
+# Background on the Opioid Crisis in America
+
+The United States opioid epidemic is a nationwide public health crisis. Initially driven by increased consumption and availability of pharmaceutical opioids such as oxycontin, an increasing number of opioid overdoses are now related to heroin and illicitly manufactured fentanyl and fentanyl analogs. Deaths related to opioid use have sharply increased from 1996 when advertisement around opioid based pharmaceuticals became unrestricted.
+
+# Research Questions
+
+I wanted to look at the steady increase in opioid-related deaths in the US, to visualize this I used a simple line graph plotting the data from 1990 to 2019. I also compared opioid related deaths to other drug related deaths in the US along the same time scale, initially just alcohol but then also cocaine and amphetamine. As my final research question I wanted to plot the data spatially by looking at how opioid related deaths have differed across different US states. However, I wanted to keep the temporal aspect of the data, so therefore I made a data file for every year with every states opioid-related death rate
+
+## Data Source
+
+All the data was sourced from the Institute for Health Metrics and Evaluation
+
+## Data Wrangling
 
 
 ```{r message=FALSE, warning=FALSE}
@@ -11,16 +34,13 @@ library(here)
 library(tidyverse)
 library(readr)
 library(ggplot2)
+library(shiny)
 
 # read and open data
 ## save data file as df
 
 df <- read.csv(here('rateofdeath.csv'))
 
-#exploring data
-head(df)
-summary(df)
-str(df)
 
 #deleting unnessecary columns
 
@@ -43,177 +63,15 @@ df$state <- tolower(df$state)
 df <- df %>% mutate(number_deaths = as.numeric(death_rate))
 
 
-#subset data set by year
-##1990
-desired_year1990 <- 1990
-year1990 <- df[which(df$year == desired_year1990),]
+```
 
-##1991
-desired_year1991 <- 1991
-year1991 <- df[which(df$year == desired_year1991),]
-
-##1992
-desired_year1992 <- 1992
-year1992 <- df[which(df$year == desired_year1992),]
-
-##1993
-desired_year1993 <- 1993
-year1993 <- df[which(df$year == desired_year1993),]
-
-##1994
-desired_year1994 <- 1994
-year1994 <- df[which(df$year == desired_year1994),]
-
-##1995
-desired_year1995 <- 1995
-year1995 <- df[which(df$year == desired_year1995),]
-
-##1996
-desired_year1996 <- 1996
-year1996 <- df[which(df$year == desired_year1996),]
-
-##1997
-desired_year1997 <- 1997
-year1997 <- df[which(df$year == desired_year1997),]
-
-##1998
-desired_year1998 <- 1998
-year1998 <- df[which(df$year == desired_year1998),]
-
-##1999
-desired_year1999 <- 1999
-year1999 <- df[which(df$year == desired_year1999),]
-
-##2000
-desired_year2000 <- 2000
-year2000 <- df[which(df$year == desired_year2000),]
-
-##2001
-desired_year2001 <- 2001
-year2001 <- df[which(df$year == desired_year2001),]
-
-##2002
-desired_year2002 <- 2002
-year2002 <- df[which(df$year == desired_year2002),]
-
-##2003
-desired_year2003 <- 2003
-year2003 <- df[which(df$year == desired_year2003),]
-
-##2004
-desired_year2004 <- 2004
-year2004 <- df[which(df$year == desired_year2004),]
-
-##2005
-desired_year2005 <- 2005
-year2005 <- df[which(df$year == desired_year2005),]
-
-##2006
-desired_year2006 <- 2006
-year2006 <- df[which(df$year == desired_year2006),]
-
-##2007
-desired_year2007 <- 2007
-year2007 <- df[which(df$year == desired_year2007),]
-
-##2008
-desired_year2008 <- 2008
-year2008 <- df[which(df$year == desired_year2008),]
-
-##2009
-desired_year2009 <- 2009
-year2009 <- df[which(df$year == desired_year2009),]
-
-##2010
-desired_year2010 <- 2010
-year2010 <- df[which(df$year == desired_year2010),]
-
-##2011
-desired_year2011 <- 2011
-year2011 <- df[which(df$year == desired_year2011),]
-
-##2012
-desired_year2012 <- 2012
-year2012 <- df[which(df$year == desired_year2012),]
-
-##2013
-desired_year2013 <- 2013
-year2013 <- df[which(df$year == desired_year2013),]
-
-##2014
-desired_year2014 <- 2014
-year2014 <- df[which(df$year == desired_year2014),]
-
-##2015
-desired_year2015 <- 2015
-year2015 <- df[which(df$year == desired_year2015),]
-
-##2016
-desired_year2016 <- 2016
-year2016 <- df[which(df$year == desired_year2016),]
-
-##2017
-desired_year2017 <- 2017
-year2017 <- df[which(df$year == desired_year2017),]
-
-##2018
-desired_year2018 <- 2018
-year2018 <- df[which(df$year == desired_year2018),]
-
-##2019
-desired_year2019 <- 2019
-year2019 <- df[which(df$year == desired_year2019),]
-
-
-# could make maps for every year, however these would all have their individual 
-#scales for death rate and therefore the colour changing would only represent change for that specific year and not across the years  
-
-library(maps)
-us_states <- map_data("state")
-head(us_states)
-
-#change region to state in map data
-colnames(us_states)[colnames(us_states) == "region"] <- "state"
-
-#create map for 1990
-p1990 <- ggplot(data = us_states,
-            mapping = aes(x = long, y = lat,
-                          group = group))
-
-p1990 + geom_polygon(fill = "white", color = "black")
-
-
-p1990 <- ggplot(data = us_states,
-            aes(x = long, y = lat,
-                group = group, fill = state))
-
-p1990 + geom_polygon(color = "gray90", size = 0.1) + guides(fill = FALSE)
-
-#align map to correct latitude and longitude
-p1990 <- ggplot(data = us_states,
-            mapping = aes(x = long, y = lat,
-                          group = group, fill = state))
-
-p1990 + geom_polygon(color = "gray90", size = 0.1) +
-  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
-  guides(fill = FALSE)
-
-#join opioid death data with map data
-map1990 <- left_join(year1990, us_states)
-
-#plot opioid death on map data for 1990
-p1990 <- ggplot(data = map1990,
-            aes(x = long, y = lat,
-                group = group, fill = death_rate))
-
-p1990 + geom_polygon(color = "gray90", size = 0.1) +
-  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
-  scale_fill_gradient(low = "white", high = "darkred", na.value = "white", name = "Death Rate per 100,000")
-
+# Making maps for each year
+```{r message=FALSE, warning=FALSE}
 #make a loop for all death maps 1990-2019
 #keep death rate scale constant through all years to show true change in death rate
 
 overall_scale_limits <- range(df$death_rate, na.rm = TRUE)
+
 
 generate_and_save_map <- function(current_year) {
   current_data <- df %>% filter(year == current_year)
@@ -234,13 +92,20 @@ generate_and_save_map <- function(current_year) {
           panel.grid.minor = element_blank(),
           panel.background = element_rect(fill = "transparent"))
   
-  # Save the plot as an image
-  ggsave(filename = paste("opioid_death_map_", current_year, ".png", sep = ""), plot = p)
+  # Define the filepath for saving the image in the "figures" directory
+  filepath <- file.path(figures_dir, paste("opioid_death_map_", current_year, ".png", sep = ""))
+  
+  # Save the plot as an image in the "figures" directory
+  ggsave(filename = filepath, plot = p)
 }
+
 
 # Generate and save frames for each year
 lapply(1990:2019, generate_and_save_map)
+```
 
+#Making a gif
+```{r message=FALSE, warning=FALSE}
 
 # Install and load the magick package
 library(magick)
@@ -261,7 +126,8 @@ image_write(animation, animation_file, format = "gif")
 ```
 ![](output.gif)
 
-```{r}
+# Making an Interactive Map
+```{r message=FALSE, warning=FALSE}
 #making maps that change by year and you can look at inidividual death rate for each state
 
 library(shiny)
@@ -303,9 +169,11 @@ server <- function(input, output) {
 
 shinyApp(map_changing, server)
 
+```
+
+```{r message=FALSE, warning=FALSE}
+
 #Combine shiny and plotly to make an interactive map where you can hover over the states to see a value and also go through year by year
-
-
 
 library(plotly)
 
