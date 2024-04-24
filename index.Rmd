@@ -194,7 +194,6 @@ year2019 <- df[which(df$year == desired_year2019),]
 #making and merging map data
 library(maps)
 us_states <- map_data("state")
-head(us_states)
 
 #change region to state in map data
 colnames(us_states)[colnames(us_states) == "region"] <- "state"
@@ -399,7 +398,11 @@ ui <- fluidPage(
                   choices = as.character(1990:2019), selected = "1990"),
   
   # Display the plot
-  plotlyOutput("map")
+  plotlyOutput("map"),
+   tags$footer(
+    style = "text-align: right; font-style: italic; color: #666; padding-right: 20px;",
+    "Data Source: Institute for Health Metrics and Evaluation"
+  )
 )
 
 server <- function(input, output) {
@@ -411,21 +414,29 @@ server <- function(input, output) {
     p <- ggplot(data = map_data,
                 aes(x = long, y = lat,
                     group = group, fill = death_rate,
-                    text = paste("<b>State:</b> ", state, "<br><b>Death Rate:</b> ", death_rate))) +
+                    text = paste("<b>State:</b> ", state,
+                                 "<br><b>Death Rate:</b> ",
+                                 sprintf("%.2f", death_rate)))) +
       geom_polygon(color = "black", size = 0.1) +
       coord_map() +
-      scale_fill_gradient(low = "white", high = "darkred", na.value = "yellow", 
-                          name = "Death Rate", limits = range(df$death_rate, na.rm = TRUE)) +
-      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year)) +
-      labs(subtitle = "Institute for Health Metrics and Evaluation") +
-      theme(plot.title = element_text(size = 18, face = "bold"),
-            plot.subtitle = element_text(size = 14),
-            panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank(),
-            panel.background = element_rect(fill = "transparent"))
+      scale_fill_gradient(low = "white", high = "darkred",
+                          na.value = "yellow", name = "Death Rate",
+                          limits = range(df$death_rate, na.rm = TRUE)) +
+      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year),
+              subtitle = "Institute for Health Metrics and Evaluation") + 
+              labs(x = "Longitude", y = "Latitude") +
+      theme(
+        plot.title = element_text(size = 18, face = "bold"),
+        plot.subtitle = element_text(size = 14),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "transparent"))
     
     ggplotly(p, tooltip = "text") %>% 
-      layout(geo = list(projection = list(type = 'albers usa'))) 
+      layout(
+        geo = list(
+          projection = list(type = 'albers usa'),
+          showland = TRUE, landcolor = 'gray')) 
   })
 }
 
