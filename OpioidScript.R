@@ -40,6 +40,17 @@ df$state <- tolower(df$state)
 df <- df %>% mutate(number_deaths = as.numeric(death_rate))
 
 
+#try to make data wide and plot the maps this way 
+df$year <- factor(df$year)
+df_wide <- pivot_wider(data = df,
+                       id_cols = state,
+                       names_from = year,
+                       values_from =death_rate,
+                       names_prefix = "death_rate_")
+colnames(df_wide)
+head(df_wide)
+
+
 #subset data set by year
 ##1990
 desired_year1990 <- 1990
@@ -161,9 +172,22 @@ year2018 <- df[which(df$year == desired_year2018),]
 desired_year2019 <- 2019
 year2019 <- df[which(df$year == desired_year2019),]
 
+#or make a loop for simplified coding
+
+# Create an empty list to store subsets for each year
+year_list <- vector("list", length = 30)  
+
+# Loop through each year and subset the data
+for (year in 1990:2019) {
+  desired_year <- df[df$year == year, ]
+  year_list[[year - 1989]] <- desired_year  # Store the subset in the list
+}
+
+
 
 # could make maps for every year, however these would all have their individual 
 #scales for death rate and therefore the colour changing would only represent change for that specific year and not across the years  
+#this is just an example for 1991 and the process of creating a map of the us
 
 library(maps)
 us_states <- map_data("state")
@@ -173,27 +197,29 @@ head(us_states)
 colnames(us_states)[colnames(us_states) == "region"] <- "state"
 
 #create map for 1990
-p1990 <- ggplot(data = us_states,
+p <- ggplot(data = us_states,
             mapping = aes(x = long, y = lat,
                           group = group))
 
-p1990 + geom_polygon(fill = "white", color = "black")
+p + geom_polygon(fill = "white", color = "black")
 
 
-p1990 <- ggplot(data = us_states,
+p <- ggplot(data = us_states,
             aes(x = long, y = lat,
                 group = group, fill = state))
 
-p1990 + geom_polygon(color = "gray90", size = 0.1) + guides(fill = FALSE)
+p + geom_polygon(color = "gray90", size = 0.1) + guides(fill = FALSE)
 
 #align map to correct latitude and longitude
-p1990 <- ggplot(data = us_states,
+p <- ggplot(data = us_states,
             mapping = aes(x = long, y = lat,
                           group = group, fill = state))
 
-p1990 + geom_polygon(color = "gray90", size = 0.1) +
+p + geom_polygon(color = "gray90", size = 0.1) +
   coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
   guides(fill = FALSE)
+
+
 
 #join opioid death data with map data
 map1990 <- left_join(year1990, us_states)
@@ -209,9 +235,6 @@ p1990 + geom_polygon(color = "gray90", size = 0.1) +
 
 
 
-
-
-
 #make a loop for all death maps 1990-2019
 #keep death rate scale constant through all years to show true change in death rate
 
@@ -224,23 +247,32 @@ generate_and_save_map <- function(current_year) {
   p <- ggplot(data = map_data,
               aes(x = long, y = lat,
                   group = group, fill = death_rate)) +
-    geom_polygon(color = "gray90", size = 0.1) +
+    geom_polygon(color = "black", size = 0.1) +
     coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
     scale_fill_gradient(low = "white", high = "red", na.value = "yellow", 
                         name = "Death Rate", limits = overall_scale_limits) +
-    ggtitle(paste("Opioid Death Map - Year", current_year))
+    ggtitle(paste("US Opioid-Use Related Death Rate - Year", current_year)) +
+    labs(subtitle = "Institute for Health Metrics and Evaluation") +
+    theme(plot.title = element_text(size = 18, face = "bold"),
+          plot.subtitle = element_text(size = 14),
+          panel.grid.major = element_blank(),  # Remove major gridlines
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(fill = "transparent"))
+
   
   # Save the plot as an image
   ggsave(filename = paste("opioid_death_map_", current_year, ".png", sep = ""), plot = p)
 }
 
+
 # Generate and save frames for each year
 lapply(1990:2019, generate_and_save_map)
+
+
 
 ##make a gif of opioid deaths 1990-2019
 
 # Install and load the magick package
-install.packages("magick")
 library(magick)
 
 # Get the list of PNG files in the current directory
@@ -250,8 +282,302 @@ file_names <- list.files(pattern = "\\.png$", full.names = TRUE)
 images <- image_read(file_names)
 
 # Create the animation with a frame rate of 24 frames per second
-animation <- image_animate(images, fps = 10)
+animation <- image_animate(images, fps = 5)
 
 # Specify the output format as GIF when writing the animation
 animation_file <- "output.gif"
 image_write(animation, animation_file, format = "gif")
+
+
+#using an animated plot using gganimate
+install.packages("gganimate")
+install.packages("gifski")
+install.packages("av")
+
+library(gganimate)
+library(gifski)
+library(av)
+
+
+##
+#make an interactive plot where you can adjust the year 
+#load up relevant packages
+library(shiny)
+library(shinyWidgets)
+
+map_changing <- fluidPage(
+  titlePanel("US Opioid-Use Related Death Rate"),
+  
+  # Create a slider input for selecting the year
+  sliderTextInput("year", "Select Year:",
+                  choices = as.character(1990:2019), selected = "1990"),
+  
+  # Display the plot
+  plotOutput("map")
+)
+
+server <- function(input, output) {
+  # Generate the plot based on the selected year
+  output$map <- renderPlot({
+    current_data <- df %>% filter(year == input$year)
+    map_data <- left_join(current_data, us_states, by = "state")
+    
+    ggplot(data = map_data,
+           aes(x = long, y = lat,
+               group = group, fill = death_rate)) +
+      geom_polygon(color = "black", size = 0.1) +
+      coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+      scale_fill_gradient(low = "white", high = "red", na.value = "yellow", 
+                          name = "Death Rate", limits = overall_scale_limits) +
+      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year)) +
+      labs(subtitle = "Institute for Health Metrics and Evaluation") +
+      theme(plot.title = element_text(size = 18, face = "bold"),
+            plot.subtitle = element_text(size = 14),
+            panel.grid.major = element_blank(),  
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "transparent"))
+  })
+}
+
+shinyApp(map_changing, server)
+
+##
+
+library(shiny)
+library(shinyWidgets)
+library(plotly)
+
+map_changing <- fluidPage(
+  titlePanel("US Opioid-Use Related Death Rate"),
+  
+  # Create a slider input for selecting the year
+  sliderTextInput("year", "Select Year:",
+                  choices = as.character(1990:2019), selected = "1990"),
+  
+  # Display the plot
+  plotlyOutput("map")
+)
+
+server <- function(input, output) {
+  # Generate the plot based on the selected year
+  output$map <- renderPlotly({
+    current_data <- df %>% filter(year == input$year)
+    map_data <- left_join(current_data, us_states, by = "state")
+    
+    p <- ggplot(data = map_data,
+           aes(x = long, y = lat,
+               group = group, fill = death_rate, text = paste("State: ", state, "<br>Death Rate: ", death_rate))) +
+      geom_polygon(color = "black", size = 0.1) +
+      coord_map() +
+      scale_fill_gradient(low = "white", high = "darkred", na.value = "yellow", 
+                          name = "Death Rate", limits = overall_scale_limits) +
+      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year)) +
+      labs(subtitle = "Institute for Health Metrics and Evaluation") +
+      theme(plot.title = element_text(size = 18, face = "bold"),
+            plot.subtitle = element_text(size = 14),
+            panel.grid.major = element_blank(),  
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "transparent"))
+    
+    ggplotly(p) %>% layout(geo = list(projection = list(type = 'albers usa'))) 
+  })
+}
+
+  
+
+shinyApp(map_changing, server)
+
+
+#saving the code here so i can try knit without the shiny
+
+
+#make an interactive plot where you can adjust the year 
+#load up relevant packages
+library(shiny)
+library(shinyWidgets)
+
+map_changing <- fluidPage(
+  titlePanel("US Opioid-Use Related Death Rate"),
+  
+  # Create a slider input for selecting the year
+  sliderTextInput("year", "Select Year:",
+                  choices = as.character(1990:2019), selected = "1990"),
+  
+  # Display the plot
+  plotOutput("map")
+)
+
+
+overall_scale_limits <- range(df$death_rate, na.rm = TRUE)
+
+server <- function(input, output) {
+  # Generate the plot based on the selected year
+  output$map <- renderPlot({
+    current_data <- df %>% filter(year == input$year)
+    map_data <- left_join(current_data, us_states, by = "state")
+    
+    ggplot(data = map_data,
+           aes(x = long, y = lat,
+               group = group, fill = death_rate)) +
+      geom_polygon(color = "black", size = 0.1) +
+      coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+      scale_fill_gradient(low = "white", high = "darkred", na.value = "yellow", 
+                          name = "Death Rate", limits = overall_scale_limits) +
+      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year)) +
+      labs(subtitle = "Institute for Health Metrics and Evaluation") +
+      theme(plot.title = element_text(size = 18, face = "bold"),
+            plot.subtitle = element_text(size = 14),
+            panel.grid.major = element_blank(),  
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "transparent"))
+  })
+}
+
+
+shinyApp(map_changing, server)
+
+shinyApp(ui = map_changing, server = server)
+
+
+
+# Make interactive map where you can see the stats for each state when you hover over them 
+
+
+library(plotly)
+
+map_hover <- fluidPage(
+  titlePanel("US Opioid-Use Related Death Rate"),
+  
+  # Create a slider input for selecting the year
+  sliderTextInput("year", "Select Year:",
+                  choices = as.character(1990:2019), selected = "1990"),
+  
+  # Display the plot
+  plotlyOutput("map")
+)
+
+server <- function(input, output) {
+  # Generate the plot based on the selected year
+  output$map <- renderPlotly({
+    current_data <- df %>% filter(year == input$year)
+    map_data <- left_join(current_data, us_states, by = "state")
+    
+    p <- ggplot(data = map_data,
+                aes(x = long, y = lat,
+                    group = group, fill = death_rate, text = paste("State: ", state, "<br>Death Rate: ", death_rate))) +
+      geom_polygon(color = "black", size = 0.1) +
+      coord_map() +
+      scale_fill_gradient(low = "white", high = "darkred", na.value = "yellow", 
+                          name = "Death Rate", limits = overall_scale_limits) +
+      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year)) +
+      labs(subtitle = "Institute for Health Metrics and Evaluation") +
+      theme(plot.title = element_text(size = 18, face = "bold"),
+            plot.subtitle = element_text(size = 14),
+            panel.grid.major = element_blank(),  
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "transparent"))
+    
+    ggplotly(p) %>% layout(geo = list(projection = list(type = 'albers usa'))) 
+  })
+}
+
+
+
+print(shinyApp(map_hover, server))
+
+
+
+
+SAVE
+
+#make an interactive plot where you can adjust the year 
+#load up relevant packages
+library(shiny)
+library(shinyWidgets)
+
+map_changing <- fluidPage(
+  titlePanel("US Opioid-Use Related Death Rate"),
+  
+  # Create a slider input for selecting the year
+  sliderTextInput("year", "Select Year:",
+                  choices = as.character(1990:2019), selected = "1990"),
+  
+  # Display the plot
+  plotOutput("map")
+)
+
+server <- function(input, output) {
+  # Generate the plot based on the selected year
+  output$map <- renderPlot({
+    current_data <- df %>% filter(year == input$year)
+    map_data <- left_join(current_data, us_states, by = "state")
+    
+    ggplot(data = map_data,
+           aes(x = long, y = lat,
+               group = group, fill = death_rate)) +
+      geom_polygon(color = "black", size = 0.1) +
+      coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+      scale_fill_gradient(low = "white", high = "red", na.value = "yellow", 
+                          name = "Death Rate", limits = overall_scale_limits) +
+      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year)) +
+      labs(subtitle = "Institute for Health Metrics and Evaluation") +
+      theme(plot.title = element_text(size = 18, face = "bold"),
+            plot.subtitle = element_text(size = 14),
+            panel.grid.major = element_blank(),  
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "transparent"))
+  })
+}
+
+shinyApp(map_changing, server)
+
+#Combine shiny and plotly to make an interactive map where you can hover over the states to see a value and also go through year by year
+
+library(shiny)
+library(shinyWidgets)
+library(plotly)
+
+map_changing <- fluidPage(
+  titlePanel("US Opioid-Use Related Death Rate"),
+  
+  # Create a slider input for selecting the year
+  sliderTextInput("year", "Select Year:",
+                  choices = as.character(1990:2019), selected = "1990"),
+  
+  # Display the plot
+  plotlyOutput("map")
+)
+
+server <- function(input, output) {
+  # Generate the plot based on the selected year
+  output$map <- renderPlotly({
+    current_data <- df %>% filter(year == input$year)
+    map_data <- left_join(current_data, us_states, by = "state")
+    
+    p <- ggplot(data = map_data,
+                aes(x = long, y = lat,
+                    group = group, fill = death_rate, text = paste("State: ", state, "<br>Death Rate: ", death_rate))) +
+      geom_polygon(color = "black", size = 0.1) +
+      coord_map() +
+      scale_fill_gradient(low = "white", high = "darkred", na.value = "yellow", 
+                          name = "Death Rate", limits = overall_scale_limits) +
+      ggtitle(paste("US Opioid-Use Related Death Rate - Year", input$year)) +
+      labs(subtitle = "Institute for Health Metrics and Evaluation") +
+      theme(plot.title = element_text(size = 18, face = "bold"),
+            plot.subtitle = element_text(size = 14),
+            panel.grid.major = element_blank(),  
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "transparent"))
+    
+    ggplotly(p) %>% layout(geo = list(projection = list(type = 'albers usa'))) 
+  })
+}
+
+
+
+shinyApp(map_changing, server)
+
+
+
+
+
