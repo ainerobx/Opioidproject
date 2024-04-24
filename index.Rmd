@@ -30,7 +30,7 @@ All the data was sourced from the Institute for Health Metrics and Evaluation
 
 ## Data Wrangling
 
-First the data needed to be cleaned, this meant deleting unnecessary columns from the data file and merging items together. Each year was separated into its own distinct data file. I also tested one of the individual years and merged it into
+First the data needed to be cleaned, this meant deleting unnecessary columns from the data file and merging items together. Each year was separated into its own distinct data file. I also tested one of the individual years and merged it into a map of mainland america to show how the visualisation would be peiced togehter.
 
 ```{r, message=FALSE, warning=FALSE}
 
