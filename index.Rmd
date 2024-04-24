@@ -10,10 +10,10 @@ output:
     toc_depth: 3
     highlight: zenburn
     pdf_document: default
+    runtime: shiny
   pdf_document:
     toc: true
     toc_depth: '3'
-runtime: shiny
 ---
 
 # Background on the Opioid Crisis in America
@@ -32,12 +32,15 @@ All the data was sourced from the Institute for Health Metrics and Evaluation
 
 First the data needed to be cleaned, this meant deleting unnecessary columns from the data file and merging items together. Each year was separated into its own distinct data file. I also tested one of the individual years and merged it into
 
-```{r message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE}
+
 library(here)
 library(tidyverse)
 library(readr)
 library(ggplot2)
 library(shiny)
+
+
 
 # read and open data
 ## save data file as df
@@ -331,6 +334,7 @@ Finally I wanted the visualisation to have the interactive element of changing t
 #making maps that change by year and you can look at inidividual death rate for each state
 
 library(shiny)
+library(sass)
 library(shinyWidgets)
 
 
