@@ -22,7 +22,7 @@ The United States opioid epidemic is a nationwide public health crisis. Initiall
 
 # Research Questions
 
-I wanted to look at the steady increase in opioid-related deaths in the US, to visualize this I used a simple line graph plotting the data from 1990 to 2019. I wanted to plot the data spatially by looking at how opioid related deaths have differed across different US states. However, I wanted to keep the temporal aspect of the data, so therefore I made a data file for every year with every states opioid-related death rate. This allowed the data to be visualized in two separate but congruent ways.
+I wanted to look at the steady increase in opioid-related deaths in the US from 1990 to 2019 with the advent of unrestricted pharmaceutical marketing and deployment . I wanted to plot the data spatially by looking at how opioid related deaths have differed across different US states. However, I wanted to keep the temporal aspect of the data, so therefore I made a data file for every year with every states opioid-related death rate. This allowed the data to be visualized in two separate but congruent ways.
 
 ## Data Source
 
