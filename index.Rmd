@@ -1,19 +1,17 @@
 ---
-title: "Opioid-related Deaths 1990-2019"
+title: "Opioid-related Deaths 1990-2019 in the United States of America"
 author: "230170597"
 date: "`r Sys.Date()`"
 output:
   html_document:
-    theme: darkly
+    keep_md: true
+    self_contained: yes
+    theme: cerulean
+    highlight: tango
     toc: true
     toc_float: true
     toc_depth: 3
-    highlight: zenburn
-    pdf_document: default
-    runtime: shiny
-  pdf_document:
-    toc: true
-    toc_depth: '3'
+    output: html_document 
 ---
 
 # Background on the Opioid Crisis in America
